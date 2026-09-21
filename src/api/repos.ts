@@ -31,7 +31,7 @@ export async function searchRepos(
     pagination: {
       hasPrev: Boolean(links.prev),
       hasNext: Boolean(links.next),
-      lastPage: links.last ?? null,
+      lastPage: links.last ?? page,
     },
   };
 }

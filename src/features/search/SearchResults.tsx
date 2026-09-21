@@ -13,6 +13,7 @@ import { RepoGrid } from "../../components/RepoGrid";
 import { formatFull } from "../../utils/format";
 import { fetchSearchResults } from "./searchSlice";
 import { SEARCH_PER_PAGE } from "./constants";
+import { SearchPagination } from "./SearchPagination";
 
 export function SearchResults() {
   const dispatch = useAppDispatch();
@@ -69,6 +70,7 @@ export function SearchResults() {
     <Stack spacing={1}>
       <Typography variant="body2" color="text.secondary">
         {formatFull(totalCount)} repositories found
+        {totalCount > 1000 && " (GitHub returns the first 1,000)"}
       </Typography>
       <LinearProgress sx={{ visibility: isRefetching ? "visible" : "hidden" }} />
       <Box
@@ -81,6 +83,7 @@ export function SearchResults() {
           ))}
         </RepoGrid>
       </Box>
+      <SearchPagination />
     </Stack>
   );
 }
