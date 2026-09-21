@@ -32,14 +32,36 @@ export const refreshTrackedRepo = createAsyncThunk<
   TrackedRepo,
   RefreshArgs,
   { rejectValue: string }
->("trackedRepos/refresh", async ({ fullName }, { rejectWithValue }) => {
-  try {
-    const [owner, name] = fullName.split("/");
-    return toTrackedRepo(await getRepo(owner, name));
-  } catch (error) {
-    return rejectWithValue(toErrorMessage(error));
-  }
-});
+>(
+  "trackedRepos/refresh",
+  async ({ fullName }, { rejectWithValue }) => {
+    try {
+      const [owner, name] = fullName.split("/");
+      return toTrackedRepo(await getRepo(owner, name));
+    } catch (error) {
+      return rejectWithValue(toErrorMessage(error));
+    }
+  },
+
+  {
+    condition: ({ id }, { getState }) => {
+      const { trackedRepos } = getState() as {
+        trackedRepos: TrackedReposState;
+      };
+      return !trackedRepos.statusById[id]?.loading;
+    },
+  },
+);
+
+export const refreshAllTrackedRepos = createAsyncThunk<void, void, { state: RootState }>(
+  "trackedRepos/refreshAll",
+  async (_, { dispatch, getState }) => {
+    const { ids, entities } = getState().trackedRepos;
+    await Promise.all(
+      ids.map((id) => dispatch(refreshTrackedRepo({ id, fullName: entities[id].fullName }))),
+    );
+  },
+);
 
 interface RepoStatus {
   loading: boolean;
@@ -111,5 +133,17 @@ const trackedReposSlice = createSlice({
   },
 });
 
+export const selectTrackedIds = (state: RootState) => state.trackedRepos.ids;
+
+export const selectTrackedRepoById = (state: RootState, id: number) =>
+  state.trackedRepos.entities[id];
+
+export const selectRepoStatusById = (state: RootState, id: number) =>
+  state.trackedRepos.statusById[id];
+
+export const selectIsAnyRefreshing = (state: RootState) =>
+  Object.values(state.trackedRepos.statusById).some((status) => status.loading);
+
 export const { trackRepo, untrackRepo } = trackedReposSlice.actions;
+
 export default trackedReposSlice.reducer;

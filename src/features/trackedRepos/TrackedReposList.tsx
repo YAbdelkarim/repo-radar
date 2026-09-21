@@ -1,17 +1,16 @@
-import Button from "@mui/material/Button";
+// features/trackedRepos/TrackedReposList.tsx
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import BookmarkRemoveOutlined from "@mui/icons-material/BookmarkRemoveOutlined";
-import { useAppDispatch, useAppSelector } from "../../app/hooks";
-import { RepoCard } from "../../components/RepoCard";
+import { useAppSelector } from "../../app/hooks";
 import { RepoGrid } from "../../components/RepoGrid";
-import { selectTrackedRepos, untrackRepo } from "./trackedReposSlice";
+import { RefreshAllButton } from "./RefreshAllButton";
+import { TrackedRepoCard } from "./TrackedRepoCard";
+import { selectTrackedIds } from "./trackedReposSlice";
 
 export function TrackedReposList() {
-  const dispatch = useAppDispatch();
-  const repos = useAppSelector(selectTrackedRepos);
+  const ids = useAppSelector(selectTrackedIds);
 
-  if (repos.length === 0) {
+  if (ids.length === 0) {
     return (
       <Typography color="text.secondary">
         You're not tracking any repositories yet. Search for one and click "Track" to add it here.
@@ -21,25 +20,16 @@ export function TrackedReposList() {
 
   return (
     <Stack spacing={2}>
-      <Typography variant="body2" color="text.secondary">
-        Tracking {repos.length} {repos.length === 1 ? "repository" : "repositories"}
-      </Typography>
+      <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center" }}>
+        <Typography variant="body2" color="text.secondary">
+          Tracking {ids.length} {ids.length === 1 ? "repository" : "repositories"}
+        </Typography>
+        <RefreshAllButton />
+      </Stack>
+
       <RepoGrid>
-        {repos.map((repo) => (
-          <RepoCard
-            key={repo.id}
-            repo={repo}
-            actions={
-              <Button
-                size="small"
-                color="error"
-                startIcon={<BookmarkRemoveOutlined />}
-                onClick={() => dispatch(untrackRepo(repo.id))}
-              >
-                Untrack
-              </Button>
-            }
-          />
+        {ids.map((id) => (
+          <TrackedRepoCard key={id} id={id} />
         ))}
       </RepoGrid>
     </Stack>

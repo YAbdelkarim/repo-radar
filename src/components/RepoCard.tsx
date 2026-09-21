@@ -13,10 +13,14 @@ import BugReportOutlined from "@mui/icons-material/BugReportOutlined";
 import Update from "@mui/icons-material/Update";
 import type { TrackedRepo } from "../types/repo";
 import { formatCompact, formatDate, formatFull } from "../utils/format";
+import Alert from "@mui/material/Alert";
+import LinearProgress from "@mui/material/LinearProgress";
 
 interface RepoCardProps {
   repo: TrackedRepo;
   actions?: ReactNode;
+  loading?: boolean;
+  error?: string | null;
 }
 
 interface StatProps {
@@ -36,9 +40,19 @@ function Stat({ icon, value, tooltip }: StatProps) {
   );
 }
 
-export function RepoCard({ repo, actions }: RepoCardProps) {
+export function RepoCard({ repo, actions, loading = false, error = null }: RepoCardProps) {
   return (
-    <Card variant="outlined" sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+    <Card
+      variant="outlined"
+      aria-busy={loading}
+      sx={{
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        position: "relative",
+      }}
+    >
+      {loading && <LinearProgress sx={{ position: "absolute", top: 0, left: 0, right: 0 }} />}
       <CardHeader
         avatar={<Avatar src={repo.ownerAvatar} alt={repo.ownerLogin} />}
         title={
@@ -54,7 +68,14 @@ export function RepoCard({ repo, actions }: RepoCardProps) {
         }
       />
 
-      <CardContent sx={{ flexGrow: 1, pt: 0 }}>
+      <CardContent
+        sx={{
+          flexGrow: 1,
+          pt: 0,
+          opacity: loading ? 0.6 : 1,
+          transition: "opacity 150ms",
+        }}
+      >
         <Typography
           variant="body2"
           color="text.secondary"
@@ -87,6 +108,12 @@ export function RepoCard({ repo, actions }: RepoCardProps) {
           />
         </Stack>
       </CardContent>
+
+      {error && (
+        <Alert severity="error" sx={{ mx: 2, mb: 1 }}>
+          {error} Showing last saved data.
+        </Alert>
+      )}
 
       {actions && <CardActions sx={{ justifyContent: "flex-end" }}>{actions}</CardActions>}
     </Card>
