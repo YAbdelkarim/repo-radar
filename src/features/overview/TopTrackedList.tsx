@@ -13,8 +13,8 @@ export function TopTrackedList() {
   return (
     <Card variant="outlined" sx={{ height: "100%" }}>
       <CardHeader
-        title="Most-starred tracked"
-        subheader={`Your top ${TOP_TRACKED_COUNT}`}
+        title={`Your top ${TOP_TRACKED_COUNT}`}
+        subheader="Your most-starred tracked repos"
         slotProps={{ title: { variant: "h6" } }}
         avatar={<EmojiEventsOutlined color="primary" />}
       />
