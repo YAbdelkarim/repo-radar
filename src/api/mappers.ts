@@ -6,6 +6,7 @@ export function toTrackedRepo(repo: GithubRepo): TrackedRepo {
     id: repo.id,
     name: repo.name,
     fullName: repo.full_name,
+    description: repo.description,
     url: repo.html_url,
     stars: repo.stargazers_count,
     openIssues: repo.open_issues_count,

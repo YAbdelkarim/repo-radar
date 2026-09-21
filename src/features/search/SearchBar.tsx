@@ -35,7 +35,6 @@ export function SearchBar() {
   return (
     <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
       {" "}
-      {/* NEW wrapper */}
       <TextField
         fullWidth
         label="Search GitHub repositories"
@@ -59,7 +58,7 @@ export function SearchBar() {
           },
         }}
       />
-      <SortSelect value={sortOption} onChange={setSortOption} /> {/* NEW */}
+      <SortSelect value={sortOption} onChange={setSortOption} />
     </Stack>
   );
 }
