@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { searchRepos } from "../../api/repos";
+import { toErrorMessage } from "../../api/error";
 import type { RepoSearchResult, RepoSearchSort } from "../../types/github";
 
 export interface SearchParams {
@@ -9,10 +10,17 @@ export interface SearchParams {
   sort?: RepoSearchSort;
 }
 
-export const fetchSearchResults = createAsyncThunk(
-  "search/fetch",
-  ({ query, perPage, page, sort }: SearchParams) => searchRepos(query, perPage, page, sort),
-);
+export const fetchSearchResults = createAsyncThunk<
+  RepoSearchResult,
+  SearchParams,
+  { rejectValue: string }
+>("search/fetch", async ({ query, perPage, page, sort }, { rejectWithValue }) => {
+  try {
+    return await searchRepos(query, perPage, page, sort);
+  } catch (error) {
+    return rejectWithValue(toErrorMessage(error));
+  }
+});
 
 interface SearchState extends RepoSearchResult {
   params: SearchParams | null;
@@ -55,7 +63,7 @@ const searchSlice = createSlice({
       .addCase(fetchSearchResults.rejected, (state, action) => {
         if (action.meta.requestId !== state.currentRequestId) return; // stale response
         state.status = "failed";
-        state.error = action.error.message ?? "Search failed";
+        state.error = action.payload ?? action.error.message ?? "Search failed";
       });
   },
 });

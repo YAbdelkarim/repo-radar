@@ -4,19 +4,25 @@ import { toTrackedRepo } from "../../api/mappers";
 import { loadTrackedRepos } from "./storage";
 import type { GithubRepo } from "../../types/github";
 import type { TrackedRepo } from "../../types/repo";
+import { toErrorMessage } from "../../api/error";
 
 interface RefreshArgs {
   id: number;
   fullName: string; // "owner/name"
 }
 
-export const refreshTrackedRepo = createAsyncThunk(
-  "trackedRepos/refresh",
-  async ({ fullName }: RefreshArgs) => {
+export const refreshTrackedRepo = createAsyncThunk<
+  TrackedRepo,
+  RefreshArgs,
+  { rejectValue: string }
+>("trackedRepos/refresh", async ({ fullName }, { rejectWithValue }) => {
+  try {
     const [owner, name] = fullName.split("/");
     return toTrackedRepo(await getRepo(owner, name));
-  },
-);
+  } catch (error) {
+    return rejectWithValue(toErrorMessage(error));
+  }
+});
 
 interface RepoStatus {
   loading: boolean;
@@ -83,7 +89,7 @@ const trackedReposSlice = createSlice({
         const status = state.statusById[action.meta.arg.id];
         if (!status) return;
         status.loading = false;
-        status.error = action.error.message ?? "Failed to refresh repository";
+        status.error = action.payload ?? action.error.message ?? "Failed to refresh repository";
       });
   },
 });
