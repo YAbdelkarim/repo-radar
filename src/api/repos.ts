@@ -1,5 +1,10 @@
 import { octokit } from "./githubClient";
-import type { GithubSearchResponse, RepoSearchResult, RepoSearchSort } from "../types/github";
+import type {
+  GithubRepo,
+  GithubSearchResponse,
+  RepoSearchResult,
+  RepoSearchSort,
+} from "../types/github";
 import { parseLinkHeader } from "../utils/parseLinkHeader";
 
 const API_VERSION = "2026-03-10";
@@ -8,7 +13,7 @@ export async function searchRepos(
   query: string,
   perPage: number,
   page: number,
-  sort?: RepoSearchSort,
+  sort: RepoSearchSort = "updated",
 ): Promise<RepoSearchResult> {
   const res = await octokit.request("GET /search/repositories", {
     q: query,
@@ -29,4 +34,13 @@ export async function searchRepos(
       lastPage: links.last ?? null,
     },
   };
+}
+
+export async function getRepo(owner: string, repo: string): Promise<GithubRepo> {
+  const res = await octokit.request("GET /repos/{owner}/{repo}", {
+    owner,
+    repo,
+    headers: { "X-Github-Api-Version": API_VERSION },
+  });
+  return res.data as GithubRepo;
 }
