@@ -1,15 +1,11 @@
 import { useMemo } from "react";
 import { BarChart } from "@mui/x-charts/BarChart";
 import type { TrackedRepo } from "../types/repo";
-import { formatCompact, formatFull } from "../utils/format";
+import { formatCompact, formatFull, truncate } from "../utils/format";
 
 const BAR_HEIGHT = 36;
 const CHART_PADDING = 80;
 const MAX_LABEL_LENGTH = 24;
-
-function truncate(text: string): string {
-  return text.length > MAX_LABEL_LENGTH ? `${text.slice(0, MAX_LABEL_LENGTH - 1)}…` : text;
-}
 
 interface StarsBarChartProps {
   repos: TrackedRepo[];
@@ -36,7 +32,7 @@ export function StarsBarChart({ repos }: StarsBarChartProps) {
           width: 180,
           // Shorten long names on the axis, but show the full name in the tooltip
           valueFormatter: (name: string, context) =>
-            context.location === "tick" ? truncate(name) : name,
+            context.location === "tick" ? truncate(name, MAX_LABEL_LENGTH) : name,
         },
       ]}
       xAxis={[{ valueFormatter: (value: number) => formatCompact(value) }]}

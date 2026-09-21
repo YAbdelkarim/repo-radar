@@ -8,8 +8,14 @@ import ClearIcon from "@mui/icons-material/Clear";
 import { useAppDispatch } from "../../app/hooks";
 import { useDebounce } from "../../hooks/useDebounce";
 import { clearSearch, fetchSearchResults } from "./searchSlice";
-import { SortSelect } from "./SortSelect";
-import { SEARCH_DEBOUNCE_MS, SEARCH_PER_PAGE, toApiSort, type SortOption } from "./constants";
+import { SortSelect } from "../../components/SortSelect";
+import {
+  SEARCH_DEBOUNCE_MS,
+  SEARCH_PER_PAGE,
+  SORT_OPTIONS,
+  toApiSort,
+  type SortOption,
+} from "./constants";
 
 export function SearchBar() {
   const dispatch = useAppDispatch();
@@ -34,7 +40,6 @@ export function SearchBar() {
 
   return (
     <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-      {" "}
       <TextField
         fullWidth
         label="Search GitHub repositories"
@@ -58,7 +63,7 @@ export function SearchBar() {
           },
         }}
       />
-      <SortSelect value={sortOption} onChange={setSortOption} />
+      <SortSelect value={sortOption} options={SORT_OPTIONS} onChange={setSortOption} />
     </Stack>
   );
 }

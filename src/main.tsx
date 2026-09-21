@@ -14,7 +14,7 @@ import App from "./app/App";
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <Provider store={store}>
-      <ThemeProvider theme={theme}>
+      <ThemeProvider theme={theme} disableTransitionOnChange>
         <CssBaseline />
         <App />
       </ThemeProvider>

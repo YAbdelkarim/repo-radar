@@ -1,6 +1,6 @@
 import type { RepoSearchSort } from "../../types/github";
 
-export const SEARCH_PER_PAGE = 10;
+export const SEARCH_PER_PAGE = 12;
 export const SEARCH_DEBOUNCE_MS = 800;
 
 export type SortOption = RepoSearchSort | "best-match";

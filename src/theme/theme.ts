@@ -27,6 +27,21 @@ export const theme = createTheme({
     borderRadius: 8,
   },
   components: {
+    MuiCssBaseline: {
+      styleOverrides: {
+        // Theme toggle cross-fade (see ThemeToggle)
+        "::view-transition-old(root), ::view-transition-new(root)": {
+          animationDuration: "400ms",
+          animationTimingFunction: "ease-in-out",
+        },
+      },
+    },
+    MuiCard: {
+      styleOverrides: { root: { transition: "border-color 150ms" } },
+    },
+    MuiTab: {
+      styleOverrides: { root: { textTransform: "none", fontWeight: 500, minHeight: 48 } },
+    },
     MuiButton: {
       defaultProps: { disableElevation: true },
       styleOverrides: { root: { textTransform: "none" } },

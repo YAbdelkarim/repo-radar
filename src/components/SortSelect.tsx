@@ -1,25 +1,32 @@
 import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
-import { SORT_OPTIONS, type SortOption } from "./constants";
 
-interface SortSelectProps {
-  value: SortOption;
-  onChange: (value: SortOption) => void;
+interface SortSelectProps<T extends string> {
+  value: T;
+  options: readonly { value: T; label: string }[];
+  onChange: (value: T) => void;
+  size?: "small" | "medium";
 }
 
-export function SortSelect({ value, onChange }: SortSelectProps) {
+export function SortSelect<T extends string>({
+  value,
+  options,
+  onChange,
+  size = "medium",
+}: SortSelectProps<T>) {
   return (
     <TextField
       select
       label="Sort by"
+      size={size}
       value={value}
       onChange={(e) => {
-        const selected = SORT_OPTIONS.find((option) => option.value === e.target.value);
+        const selected = options.find((option) => option.value === e.target.value);
         if (selected) onChange(selected.value);
       }}
       sx={{ minWidth: 200 }}
     >
-      {SORT_OPTIONS.map((option) => (
+      {options.map((option) => (
         <MenuItem key={option.value} value={option.value}>
           {option.label}
         </MenuItem>

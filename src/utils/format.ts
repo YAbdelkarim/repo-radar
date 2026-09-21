@@ -13,3 +13,7 @@ export function formatFull(value: number): string {
 export function formatDate(iso: string): string {
   return mediumDate.format(new Date(iso)); // "Sep 21, 2026"
 }
+
+export function truncate(text: string, maxLength: number): string {
+  return text.length > maxLength ? `${text.slice(0, maxLength - 1)}…` : text;
+}

@@ -14,6 +14,7 @@ export async function searchRepos(
   perPage: number,
   page: number,
   sort: RepoSearchSort = "updated",
+  signal?: AbortSignal,
 ): Promise<RepoSearchResult> {
   const res = await octokit.request("GET /search/repositories", {
     q: query,
@@ -21,6 +22,7 @@ export async function searchRepos(
     per_page: perPage,
     page,
     headers: { "X-GitHub-Api-Version": API_VERSION },
+    request: { signal },
   });
   const data = res.data as GithubSearchResponse;
   const links = parseLinkHeader(res.headers.link);

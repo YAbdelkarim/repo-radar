@@ -11,12 +11,36 @@ import type { GithubRepo } from "../../types/github";
 import type { TrackedRepo } from "../../types/repo";
 import { toErrorMessage } from "../../api/error";
 import type { RootState } from "../../app/store";
+import { shallowEqual } from "react-redux";
+import { COMPARATORS, topBy, type TrackedSortOption } from "./sorting";
 
 const selectIds = (state: RootState) => state.trackedRepos.ids;
 const selectEntities = (state: RootState) => state.trackedRepos.entities;
 
 export const selectTrackedRepos = createSelector([selectIds, selectEntities], (ids, entities) =>
   ids.map((id) => entities[id]),
+);
+
+export const TOP_TRACKED_COUNT = 5;
+
+// Keeps the previous array when the contents are unchanged, so subscribers skip re-rendering
+const stableResult = { memoizeOptions: { resultEqualityCheck: shallowEqual } };
+
+export const selectTopStarredRepos = createSelector(
+  [selectTrackedRepos],
+  (repos) => topBy(repos, TOP_TRACKED_COUNT, COMPARATORS.stars),
+  stableResult,
+);
+
+export const selectSortedTrackedIds = createSelector(
+  [selectIds, selectEntities, (_state: RootState, sort: TrackedSortOption) => sort],
+  (ids, entities, sort) => {
+    // "added" shows newest first; ids are stored in insertion order
+    if (sort === "added") return ids.toReversed();
+    const compare = COMPARATORS[sort];
+    return ids.toSorted((a, b) => compare(entities[a], entities[b]));
+  },
+  stableResult,
 );
 
 export const selectTrackedCount = (state: RootState) => state.trackedRepos.ids.length;
