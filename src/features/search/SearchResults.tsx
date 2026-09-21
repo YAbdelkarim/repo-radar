@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -14,11 +13,11 @@ import { formatFull } from "../../utils/format";
 import { fetchSearchResults } from "./searchSlice";
 import { SEARCH_PER_PAGE } from "./constants";
 import { SearchPagination } from "./SearchPagination";
+import { TrackButton } from "../trackedRepos/TrackButton"; // NEW import
 
 export function SearchResults() {
   const dispatch = useAppDispatch();
   const { items, totalCount, params, status, error } = useAppSelector((state) => state.search);
-  const repos = useMemo(() => items.map(toTrackedRepo), [items]);
 
   // 1. Nothing searched yet
   if (status === "idle") {
@@ -48,7 +47,7 @@ export function SearchResults() {
   }
 
   // 3. First load: nothing to show yet
-  if (status === "loading" && repos.length === 0) {
+  if (status === "loading" && items.length === 0) {
     return (
       <RepoGrid>
         {Array.from({ length: SEARCH_PER_PAGE }, (_, i) => (
@@ -59,7 +58,7 @@ export function SearchResults() {
   }
 
   // 4. Search worked but found nothing
-  if (status === "succeeded" && repos.length === 0) {
+  if (status === "succeeded" && items.length === 0) {
     return <Typography color="text.secondary">No repositories match "{params?.query}".</Typography>;
   }
 
@@ -78,8 +77,12 @@ export function SearchResults() {
         sx={{ opacity: isRefetching ? 0.5 : 1, transition: "opacity 150ms" }}
       >
         <RepoGrid>
-          {repos.map((repo) => (
-            <RepoCard key={repo.id} repo={repo} />
+          {items.map((item) => (
+            <RepoCard
+              key={item.id}
+              repo={toTrackedRepo(item)}
+              actions={<TrackButton repo={item} />}
+            />
           ))}
         </RepoGrid>
       </Box>

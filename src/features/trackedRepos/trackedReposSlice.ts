@@ -1,10 +1,27 @@
-import { createSlice, createAsyncThunk, type PayloadAction } from "@reduxjs/toolkit";
+import {
+  createSlice,
+  createAsyncThunk,
+  createSelector,
+  type PayloadAction,
+} from "@reduxjs/toolkit";
 import { getRepo } from "../../api/repos";
 import { toTrackedRepo } from "../../api/mappers";
 import { loadTrackedRepos } from "./storage";
 import type { GithubRepo } from "../../types/github";
 import type { TrackedRepo } from "../../types/repo";
 import { toErrorMessage } from "../../api/error";
+import type { RootState } from "../../app/store";
+
+const selectIds = (state: RootState) => state.trackedRepos.ids;
+const selectEntities = (state: RootState) => state.trackedRepos.entities;
+
+export const selectTrackedRepos = createSelector([selectIds, selectEntities], (ids, entities) =>
+  ids.map((id) => entities[id]),
+);
+
+export const selectTrackedCount = (state: RootState) => state.trackedRepos.ids.length;
+
+export const selectIsTracked = (state: RootState, id: number) => id in state.trackedRepos.entities;
 
 interface RefreshArgs {
   id: number;
