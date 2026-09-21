@@ -7,15 +7,19 @@ A dashboard for searching GitHub repositories, tracking favourites, and monitori
 
 ## Features
 
+- Overview tab (the default view) with:
+  - A quick search that shows the 5 most-starred repositories matching a query
+  - Your 5 most-starred tracked repositories
+  - A column chart comparing the stars of your top 3 tracked repositories
 - Debounced repository search with sorting (best match, stars, forks, recently updated, help-wanted issues)
 - Pagination (first / previous / next / last) driven by GitHub's `Link` header
 - Track and untrack repositories from search results
-- Tracked Repos view showing stars, open issues and last push date
+- Tracked Repos view showing stars, open issues and last push date, sortable by recently tracked, stars, last push, open issues or name
 - Refresh a single repository or all tracked repositories
 - Independent loading and error states for every tracked repository
 - Tracked repositories persisted in `localStorage`
 - Horizontal bar chart of stars per tracked repository
-- Light and dark colour schemes that follow the operating system setting
+- Light, dark and system colour schemes, switched from an in-app toggle with a cross-fade
 - Loading skeletons, empty states, and readable error messages (offline, rate limit, not found)
 
 ## Tech stack
@@ -63,7 +67,6 @@ Use a fine-grained token with read-only access to public repositories. `.env.loc
 | `npm run dev` | Start the development server |
 | `npm run build` | Type-check and build for production |
 | `npm run preview` | Preview the production build locally |
-| `npm test` | Run the reducer tests (Vitest) |
 
 ### Deployment
 
@@ -79,20 +82,26 @@ src/
 │   ├── githubClient.ts     # The single Octokit instance
 │   ├── repos.ts            # searchRepos(), getRepo()
 │   ├── mappers.ts          # GithubRepo -> TrackedRepo
-│   └── errors.ts           # Converts API errors into user-facing messages
+│   └── error.ts            # Converts API errors into user-facing messages
 ├── app/                    # App-wide wiring
-│   ├── App.tsx             # Layout and tabs
+│   ├── App.tsx             # Header, tabs and tab panels
 │   ├── store.ts            # Store configuration, RootState, AppDispatch
 │   ├── hooks.ts            # Typed useAppDispatch / useAppSelector
 │   └── persistenceMiddleware.ts
 ├── components/             # Shared presentational components (no Redux)
+│   ├── AutoHeight.tsx      # Container that animates its height to fit its content
 │   ├── RepoCard.tsx
 │   ├── RepoCardSkeleton.tsx
 │   ├── RepoGrid.tsx
-│   └── StarsBarChart.tsx
+│   ├── RepoListItem.tsx    # Compact list row used on the Overview tab
+│   ├── SortSelect.tsx      # Generic sort dropdown (search and tracked lists)
+│   ├── StarsBarChart.tsx   # Horizontal chart: stars of every tracked repo
+│   ├── ThemeToggle.tsx     # Light / system / dark switch
+│   └── TopStarsColumnChart.tsx  # Vertical chart: top 3 tracked repos
 ├── features/
-│   ├── search/             # Search bar, sort, results, pagination, slice
-│   └── trackedRepos/       # Track button, tracked list and cards, refresh, chart, slice, storage
+│   ├── overview/           # Overview tab: quick search, top tracked list, top 3 chart
+│   ├── search/             # Search bar, results, pagination, slice
+│   └── trackedRepos/       # Track button, tracked list and cards, sorting, refresh, chart, slice, storage
 ├── hooks/
 │   └── useDebounce.ts      # Generic, not tied to a feature
 ├── theme/
@@ -106,7 +115,7 @@ src/
 └── main.tsx                # Providers: Redux, theme, CssBaseline
 ```
 
-A flat structure (`components/`, `hooks/`, …) would be simpler but turns into a mix of unrelated files as features grow. A fully nested feature-sliced structure would be overkill for two features. The hybrid keeps each feature self-contained without extra nesting.
+A flat structure (`components/`, `hooks/`, …) would be simpler but turns into a mix of unrelated files as features grow. A fully nested feature-sliced structure would be overkill for three small features. The hybrid keeps each feature self-contained without extra nesting.
 
 ## Architecture and technical decisions
 
@@ -160,7 +169,8 @@ Two slices with different lifecycles:
 - **Normalized by id**, so updating one repository is a direct keyed update.
 - **`statusById` gives every repository its own loading and error state**, instead of a single global loading flag.
 - **Derived data is computed, not stored.** Lists and chart data come from memoized selectors (`createSelector`).
-- **Global vs. local state:** only data shared between components is in Redux. The raw search input text and the active tab are local component state.
+- **Global vs. local state:** only data shared between components is in Redux. The raw search input text, the active tab, the tracked-list sort order and the quick search results are local component state.
+- **Sorted and top-N views are selectors.** `selectSortedTrackedIds(state, sort)` returns ids in the chosen order, and `selectTopStarredRepos` returns the 5 most-starred repositories (the Overview chart uses the first 3). The stored `ids` array always stays in tracking order.
 
 ### Asynchronous operations
 
@@ -181,6 +191,14 @@ Two slices with different lifecycles:
 - Navigation always goes through the same typed `searchRepos` function with a page number, rather than following the raw URLs from the header.
 - Pagination buttons are disabled while a page is loading, so the displayed page and the pagination state stay in sync.
 
+### Quick search (Overview tab)
+
+- It's independent of the main search: it lives in a `useTopStarredSearch` hook with local state, so it never overwrites the Search tab's results.
+- It always asks GitHub for 5 results sorted by stars, using the same `searchRepos` function as the main search.
+- **Superseded requests are cancelled.** Each request gets an `AbortController`, and typing a new query aborts the previous request instead of just ignoring its response.
+- **Recent results are cached** in memory (up to 30 queries, for 5 minutes), so repeating a query or returning to the tab doesn't send another request.
+- While the next query loads, the previous results stay visible, dimmed. Nothing is shown below the input until a query is typed.
+
 ### Persistence
 
 - A **Redux middleware** writes tracked repositories to `localStorage` after actions that change them: track, untrack, and a successful refresh. It saves an ordered array built from `ids`, so tracking order survives a reload.
@@ -192,20 +210,21 @@ Two slices with different lifecycles:
 
 - Tracked cards receive only an `id` and subscribe to their own entity and status. Refreshing one repository re-renders only that card.
 - The "Refresh all" button is its own component, because it subscribes to a value that changes on every refresh. When that subscription lived in the list component, every card re-rendered on every refresh.
-- The chart uses a memoized selector, so it re-renders when star counts change but not when a refresh merely starts.
+- The charts use memoized selectors, so they re-render when star counts change but not when a refresh merely starts.
+- **Stable selector results.** The sorted-ids and top-5 selectors use a shallow-equality result check, so they keep returning the same array while its contents are unchanged. Components subscribed to them skip re-rendering.
+- **Top-N without a full sort.** `topBy()` keeps the best *k* items in one pass (O(n·k)) instead of sorting the whole list, since *k* is only 5.
+- **Charts are code-split.** Both charts load through `React.lazy`, so MUI X Charts (about 90 KB gzipped) is downloaded only when a chart is actually shown. A skeleton fills its place while it loads.
 
 ### UI
 
 - **One `RepoCard` for both views.** It's presentational: it receives data, an optional loading flag, an optional error, and an `actions` slot. Views decide which buttons to show.
-- **Both tab panels stay mounted** and the inactive one is hidden. Unmounting the search panel would reset the search input, which would clear the results.
+- **Tab panels mount on first visit and then stay mounted**, hidden when inactive. Tabs you never open cost nothing, and switching back to a tab keeps its state (unmounting the search panel would reset the search input and clear the results).
+- **Expanding search panel.** The Search tab's content sits on a surface that smoothly grows to fit the results and shrinks back when the search is cleared (`AutoHeight`, built on `ResizeObserver` and a CSS height transition).
 - **Loading states:** skeleton cards on the first load; on later loads (sort or page change) the current results stay visible, dimmed, under a progress bar.
-- **Chart:** horizontal bars so long `owner/name` labels stay readable; sorted by stars; compact numbers on the axis and exact values in tooltips. MUI X Charts inherits the MUI theme, including dark mode.
-- **Theme:** light and dark colour schemes defined with CSS variables; the app follows the OS preference.
-- **Accessibility:** labelled icon buttons, `aria-busy` on loading regions, `aria-pressed` on the track toggle, and linked tab and panel attributes.
-
-### Testing
-
-Reducer tests (Vitest) cover the cases that are hard to reproduce by hand: ignoring stale search responses, recording a refresh error while keeping existing data, and not re-adding a repository that was untracked mid-refresh. Reducers are pure functions, so these tests build actions directly and need no network mocking.
+- **Charts:** the Tracked tab uses horizontal bars so long `owner/name` labels stay readable. The Overview's top 3 chart uses vertical columns with the star count above each bar. Both are sorted by stars, with compact numbers on the axis and exact values in tooltips. MUI X Charts inherits the MUI theme, including dark mode.
+- **Theme:** light and dark colour schemes defined with CSS variables. The header toggle chooses light, dark or system; MUI saves the choice in `localStorage`. Switching cross-fades the page using the browser's View Transitions API, and switches instantly where that API isn't supported or when the user prefers reduced motion.
+- **Responsive header:** the title and icon shrink on phone-width screens. The favicon is the same radar icon, and it follows the OS light or dark setting.
+- **Accessibility:** labelled icon buttons, `aria-busy` on loading regions, animations disabled under `prefers-reduced-motion`, `aria-pressed` on the track toggle, and linked tab and panel attributes.
 
 ### Monorepo: considered, not used
 
@@ -219,13 +238,13 @@ The task mentions an optional monorepo with separate UI and chart packages. I de
 - **Tracked data is a snapshot.** Stats reflect the moment a repository was tracked or last refreshed; they are not updated automatically in the background.
 - **Refresh all** makes one request per tracked repository, so a large tracked list uses the unauthenticated limit quickly.
 - **Stored data is lightly validated.** Data from `localStorage` is checked to be an array, not validated field by field.
-- **Theme** follows the operating system preference; there is no in-app toggle.
+- **Quick search results can be up to 5 minutes old**, because of the in-memory cache. The cache is cleared on reload.
 
 ## Future improvements
 
 - A Vercel serverless function to proxy GitHub requests, keeping a token server-side for higher rate limits.
 - Migrating the data layer to RTK Query for built-in caching and request deduplication.
-- An in-app light/dark toggle (the theme is already set up for it).
 - Showing the true last commit date, fetched per repository.
 - Schema validation (for example with Zod) for data loaded from `localStorage`.
-- Component tests, and saving the search query and page in the URL so searches can be shared.
+- Reducer and component tests.
+- Saving the search query and page in the URL so searches can be shared.
