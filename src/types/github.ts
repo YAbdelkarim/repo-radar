@@ -20,3 +20,15 @@ export interface GithubSearchResponse {
   incomplete_results: boolean;
   items: GithubRepo[];
 }
+
+export interface RepoSearchResult {
+  items: GithubRepo[];
+  totalCount: number;
+  pagination: {
+    hasPrev: boolean;
+    hasNext: boolean;
+    lastPage: number | null;
+  };
+}
+
+export type RepoSearchSort = "updated" | "stars" | "forks" | "help-wanted-issues";
