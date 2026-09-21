@@ -15,6 +15,7 @@
     "@fontsource/roboto": "^5.3.0",
     "@mui/icons-material": "^9.4.0",
     "@mui/material": "^9.4.0",
+    "@mui/x-charts": "^9.14.0",
     "@octokit/core": "^7.0.8",
     "@reduxjs/toolkit": "^2.12.0",
     "parse-link-header": "^2.0.0",

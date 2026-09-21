@@ -10,6 +10,7 @@ import { SearchBar } from "../features/search/SearchBar";
 import { SearchResults } from "../features/search/SearchResults";
 import { TrackedReposList } from "../features/trackedRepos/TrackedReposList";
 import { selectTrackedCount } from "../features/trackedRepos/trackedReposSlice";
+import { TrackedStarsChart } from "../features/trackedRepos/TrackedStarsChart";
 
 type View = "search" | "tracked";
 
@@ -50,7 +51,10 @@ export default function App() {
           aria-labelledby="tab-tracked"
           hidden={view !== "tracked"}
         >
-          <TrackedReposList />
+          <Stack spacing={3}>
+            <TrackedStarsChart />
+            <TrackedReposList />
+          </Stack>
         </Box>
       </Stack>
     </Container>
