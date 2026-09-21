@@ -2,8 +2,8 @@
 
 A dashboard for searching GitHub repositories, tracking favourites, and monitoring their latest stats.
 
-**Live demo:** <!-- TODO: add your Vercel URL -->
-**Repository:** <!-- TODO: add your GitHub repository URL -->
+**Live demo:** https://repo-radar-seven.vercel.app/
+**Repository:** https://github.com/YAbdelkarim/repo-radar
 
 ## Features
 
