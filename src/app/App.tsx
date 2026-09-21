@@ -1,5 +1,10 @@
+import { SearchBar } from "../features/search/SearchBar";
 function App() {
-  return <></>;
+  return (
+    <>
+      <SearchBar />
+    </>
+  );
 }
 
 export default App;

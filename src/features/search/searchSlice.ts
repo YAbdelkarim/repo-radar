@@ -15,6 +15,7 @@ export const fetchSearchResults = createAsyncThunk(
 );
 
 interface SearchState extends RepoSearchResult {
+  params: SearchParams | null;
   status: "idle" | "loading" | "succeeded" | "failed";
   error: string | null;
   currentRequestId: string | null;
@@ -24,6 +25,7 @@ const initialState: SearchState = {
   items: [],
   totalCount: 0,
   pagination: { hasPrev: false, hasNext: false, lastPage: null },
+  params: null,
   status: "idle",
   error: null,
   currentRequestId: null,
@@ -32,13 +34,16 @@ const initialState: SearchState = {
 const searchSlice = createSlice({
   name: "search",
   initialState,
-  reducers: {},
+  reducers: {
+    clearSearch: () => initialState,
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchSearchResults.pending, (state, action) => {
         state.status = "loading";
         state.error = null;
         state.currentRequestId = action.meta.requestId;
+        state.params = action.meta.arg;
       })
       .addCase(fetchSearchResults.fulfilled, (state, action) => {
         if (action.meta.requestId !== state.currentRequestId) return; // stale response
@@ -55,4 +60,5 @@ const searchSlice = createSlice({
   },
 });
 
+export const { clearSearch } = searchSlice.actions;
 export default searchSlice.reducer;
