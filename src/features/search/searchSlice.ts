@@ -1,25 +1,23 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { searchRepos } from "../../api/repos";
-import type { GithubRepo, RepoSearchSort } from "../../types/github";
+import type { RepoSearchResult, RepoSearchSort } from "../../types/github";
 
-interface SearchParams {
+export interface SearchParams {
   query: string;
   page: number;
   perPage: number;
   sort?: RepoSearchSort;
 }
 
-export const fetchSearchResults = createAsyncThunk("search/fetch", async (params: SearchParams) => {
-  const result = await searchRepos(params.query, params.perPage, params.page, params.sort);
-  return result;
-});
+export const fetchSearchResults = createAsyncThunk(
+  "search/fetch",
+  ({ query, perPage, page, sort }: SearchParams) => searchRepos(query, perPage, page, sort),
+);
 
-interface SearchState {
-  items: GithubRepo[];
-  totalCount: number;
-  pagination: { hasPrev: boolean; hasNext: boolean; lastPage: number | null };
+interface SearchState extends RepoSearchResult {
   status: "idle" | "loading" | "succeeded" | "failed";
   error: string | null;
+  currentRequestId: string | null;
 }
 
 const initialState: SearchState = {
@@ -28,6 +26,7 @@ const initialState: SearchState = {
   pagination: { hasPrev: false, hasNext: false, lastPage: null },
   status: "idle",
   error: null,
+  currentRequestId: null,
 };
 
 const searchSlice = createSlice({
@@ -36,19 +35,22 @@ const searchSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-      .addCase(fetchSearchResults.pending, (state) => {
+      .addCase(fetchSearchResults.pending, (state, action) => {
         state.status = "loading";
         state.error = null;
+        state.currentRequestId = action.meta.requestId;
       })
       .addCase(fetchSearchResults.fulfilled, (state, action) => {
+        if (action.meta.requestId !== state.currentRequestId) return; // stale response
         state.status = "succeeded";
         state.items = action.payload.items;
         state.totalCount = action.payload.totalCount;
         state.pagination = action.payload.pagination;
       })
       .addCase(fetchSearchResults.rejected, (state, action) => {
+        if (action.meta.requestId !== state.currentRequestId) return; // stale response
         state.status = "failed";
-        state.error = action.error.message ?? "Search Failed";
+        state.error = action.error.message ?? "Search failed";
       });
   },
 });
